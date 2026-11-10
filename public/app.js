@@ -57,7 +57,33 @@ $("#drafts").onclick = async e => {
   }
 };
 
-$("#refreshDrafts").onclick = loadDrafts;
+$("#refreshDrafts").onclick = loadDrafts;$("#importYesterday").onclick = async () => {
+  const btn = $("#importYesterday");
+  const result = $("#importResult");
+
+  btn.disabled = true;
+  btn.textContent = "IMPORTATION EN COURS...";
+  result.textContent = "Récupération des courses...";
+
+  try {
+    const data = await api(
+      "/api/admin/horse-racing/import-yesterday",
+      { method: "POST" }
+    );
+
+    result.textContent =
+      "Importation réussie : " +
+      data.reunions + " réunions et " +
+      data.courses_importees + " courses enregistrées.";
+
+  } catch (error) {
+    result.textContent = "Erreur : " + error.message;
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "IMPORTER LES COURSES D'HIER";
+  }
+};
 $("#adminPayments").onclick=async e=>{const a=e.target.dataset.approve,r=e.target.dataset.reject;if(!a&&!r)return;try{const d=await api(`/api/admin/payments/${a||r}/${a?"approve":"reject"}`,{method:"POST"});notice(d.message);await loadAdmin()}catch(x){notice(x.message)}};
 $("#newAnalysis").onsubmit=async e=>{e.preventDefault();try{await api("/api/admin/analyses",{method:"POST",body:JSON.stringify(data(e.target))});notice("Analyse publiée.");e.target.reset();await loadAdmin()}catch(x){notice(x.message)}};
 async function refresh(){
