@@ -333,6 +333,98 @@ app.get("/api/admin/horse-racing/yesterday", auth("admin"), async (req, res) => 
       error: "Impossible de récupérer les résultats."
     });
   }
+});// IMPORTATION DES COURSES DANS POSTGRESQL
+app.post("/api/admin/horse-racing/import-yesterday", auth("admin"), async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const key = process.env.HORSE_RACING_API_KEY;
+
+    if (!key) {
+      return res.status(500).json({
+        error: "Clé API absente dans Render."
+      });
+    }
+
+    const response = await fetch(
+      "https://api.apihorseracing.com/v1/results/yesterday",
+      {
+        headers: {
+          "X-API-Key": key
+        },
+        signal: AbortSignal.timeout(20000)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: result.error?.message || "Erreur API hippique."
+      });
+    }
+
+    const meetings = result.data || [];
+    let imported = 0;
+
+    await client.query("BEGIN");
+
+    for (const meeting of meetings) {
+      const races = meeting.races || [];
+
+      for (const race of races) {
+        const meetingId = meeting.id || meeting.meeting_id;
+        const raceId = race.id || race.race_id;
+
+        if (!meetingId || !raceId) continue;
+
+        await client.query(
+          `INSERT INTO horse_racing_races
+          (meeting_id, race_id, country, course, race_date, race_name, raw_data)
+          VALUES ($1,$2,$3,$4,$5,$6,$7)
+          ON CONFLICT (meeting_id, race_id)
+          DO UPDATE SET
+            country = EXCLUDED.country,
+            course = EXCLUDED.course,
+            race_date = EXCLUDED.race_date,
+            race_name = EXCLUDED.race_name,
+            raw_data = EXCLUDED.raw_data,
+            imported_at = NOW()`,
+          [
+            String(meetingId),
+            String(raceId),
+            meeting.country || race.country || null,
+            meeting.track || meeting.course || null,
+            race.date || meeting.date || null,
+            race.name || race.race_name || null,
+            JSON.stringify({ meeting, race })
+          ]
+        );
+
+        imported++;
+      }
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      message: "Importation terminée avec succès.",
+      reunions: meetings.length,
+      courses_importees: imported
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    console.error("Erreur importation courses:", error);
+
+    res.status(500).json({
+      error: "Impossible d'enregistrer les courses."
+    });
+
+  } finally {
+    client.release();
+  }
 });
 // PAGE PRINCIPALE
 app.get("*",(req,res)=>{
