@@ -60,10 +60,44 @@ $("#drafts").onclick = async e => {
 $("#refreshDrafts").onclick = loadDrafts;
 $("#adminPayments").onclick=async e=>{const a=e.target.dataset.approve,r=e.target.dataset.reject;if(!a&&!r)return;try{const d=await api(`/api/admin/payments/${a||r}/${a?"approve":"reject"}`,{method:"POST"});notice(d.message);await loadAdmin()}catch(x){notice(x.message)}};
 $("#newAnalysis").onsubmit=async e=>{e.preventDefault();try{await api("/api/admin/analyses",{method:"POST",body:JSON.stringify(data(e.target))});notice("Analyse publiée.");e.target.reset();await loadAdmin()}catch(x){notice(x.message)}};
-async function refresh(){try{const d=await api("/api/me");show("#auth",false);show("#member",true);show("#logout",true);$("#profile").innerHTML=`<b>${esc(d.user.name)}</b><br>${esc(d.user.email)}<br>Rôle : ${esc(d.user.role)}<br>Abonnement : ${d.user.subscription_until?new Date(d.user.subscription_until).toLocaleString("fr-FR"):"Inactif"}`;await loadMine();await loadAnalyses();if(d.user.role==="admin"){
-  show("#admin",true);
-  await loadAdmin();
-  await loadDrafts();
-}else{
-  show("#admin",false);
+async function refresh(){
+  try {
+    const d = await api("/api/me");
+
+    show("#auth",false);
+    show("#member",true);
+    show("#logout",true);
+
+    $("#profile").innerHTML = `
+      <b>${esc(d.user.name)}</b><br>
+      ${esc(d.user.email)}<br>
+      Rôle : ${esc(d.user.role)}<br>
+      Abonnement : ${
+        d.user.subscription_until
+          ? new Date(d.user.subscription_until).toLocaleString("fr-FR")
+          : "Inactif"
+      }
+    `;
+
+    await loadMine();
+    await loadAnalyses();
+
+    if(d.user.role === "admin"){
+      show("#admin",true);
+      await loadAdmin();
+      await loadDrafts();
+    } else {
+      show("#admin",false);
+    }
+
+  } catch(e) {
+    notice("Erreur : " + e.message);
+    show("#auth",true);
+    show("#member",false);
+    show("#admin",false);
+    show("#logout",false);
+  }
+}
+
+refresh();
 }
