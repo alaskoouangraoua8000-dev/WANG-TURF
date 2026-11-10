@@ -151,6 +151,51 @@ app.get("/api/admin/drafts",auth("admin"),async(req,res)=>{
     console.error("Erreur chargement brouillons:",e);
     res.status(500).json({error:"Impossible de charger les brouillons."});
   }
+});app.post("/api/admin/drafts/:id/approve",auth("admin"),async(req,res)=>{
+  const c = await pool.connect();
+  try {
+    await c.query("BEGIN");
+
+    const r = await c.query(
+      "SELECT * FROM analysis_drafts WHERE id=$1 AND status='pending' FOR UPDATE",
+      [req.params.id]
+    );
+
+    if (!r.rowCount) throw new Error("Brouillon introuvable ou déjà traité.");
+
+    const d = r.rows[0];
+
+    await c.query(
+      `INSERT INTO analyses(title,race_date,category,content)
+       VALUES($1,$2,$3,$4)`,
+      [d.title,d.race_date,d.category,d.content]
+    );
+
+    await c.query(
+      "UPDATE analysis_drafts SET status='approved',reviewed_at=NOW() WHERE id=$1",
+      [d.id]
+    );
+
+    await c.query("COMMIT");
+    res.json({message:"Analyse approuvée et publiée."});
+  } catch(e) {
+    await c.query("ROLLBACK");
+    res.status(400).json({error:e.message});
+  } finally {
+    c.release();
+  }
+});
+
+app.post("/api/admin/drafts/:id/reject",auth("admin"),async(req,res)=>{
+  const r = await pool.query(
+    "UPDATE analysis_drafts SET status='rejected',reviewed_at=NOW() WHERE id=$1 AND status='pending' RETURNING id",
+    [req.params.id]
+  );
+
+  if (!r.rowCount)
+    return res.status(404).json({error:"Brouillon introuvable ou déjà traité."});
+
+  res.json({message:"Brouillon rejeté."});
 });
 app.get("/api/admin/overview",auth("admin"),async(req,res)=>{
   const [users,payments,stats]=await Promise.all([
