@@ -281,3 +281,47 @@ app.get("/api/admin/horse-racing/coverage", auth("admin"), async (req,res) => {
 app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 initDb().then(()=>app.listen(PORT,()=>console.log(`WANG TURF démarré sur le port ${PORT}`)))
   .catch(e=>{console.error("Échec initialisation:",e);process.exit(1);});
+// TEST IMPORTATION DES RESULTATS DE LA VEILLE
+app.get("/api/admin/horse-racing/yesterday", auth("admin"), async (req, res) => {
+  try {
+    const key = process.env.HORSE_RACING_API_KEY;
+
+    if (!key) {
+      return res.status(500).json({
+        error: "Clé API absente dans Render."
+      });
+    }
+
+    const response = await fetch(
+      "https://api.apihorseracing.com/v1/results/yesterday",
+      {
+        headers: {
+          "X-API-Key": key
+        },
+        signal: AbortSignal.timeout(20000)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: result.error?.message || "Erreur de récupération des résultats."
+      });
+    }
+
+    res.json({
+      message: "Récupération des résultats réussie.",
+      nombre_reunions: result.data?.length || 0,
+      donnees: result.data || [],
+      meta: result.meta
+    });
+
+  } catch (error) {
+    console.error("Erreur résultats hippiques:", error);
+
+    res.status(500).json({
+      error: "Impossible de récupérer les résultats."
+    });
+  }
+});
