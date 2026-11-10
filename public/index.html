@@ -28,7 +28,14 @@
 
 <section id="admin" class="hidden">
 
- <article class="panel"><h2>Administration</h2><div id="stats" class="stats"></div><h3>Demandes de paiement</h3><div id="adminPayments"></div></article>
+ <article class="panel"><h2>Administration</h2><div id="stats" class="stats"></div><h3>Demandes de paiement</h3><div id="adminPayments"></div></article><article class="panel">
+  <h2>Importation des courses hippiques</h2>
+  <p class="muted">Récupérer les courses disponibles de la veille.</p>
+  <button type="button" id="importYesterday">
+    IMPORTER LES COURSES D'HIER
+  </button>
+  <div id="importResult"></div>
+</article>
  <article class="panel">
   <h2>Analyses automatiques — Brouillons à valider</h2>
   <p class="muted">Vérifiez chaque analyse avant de la publier.</p>
@@ -40,15 +47,4 @@
  <article class="panel"><h2>Publier une analyse</h2><form id="newAnalysis"><label>Titre<input name="title" required></label><label>Date de course<input name="race_date" type="date"></label><label>Catégorie<select name="category"><option>Quinté</option><option>Quarté</option><option>Tiercé</option><option>Couplé</option><option>Analyse générale</option></select></label><label>Contenu<textarea name="content" rows="6" required></textarea></label><button>Publier</button></form><h3>Clients</h3><div id="customers"></div></article>
 </section>
 </main><footer>WANG TURF · Analyses informatives uniquement · Jouez de façon responsable
- <article class="panel"><h2>Administration</h2><div id="stats" class="stats"></div><h3>Demandes de paiement</h3><div id="adminPayments"></div></article>
- <article class="panel">
-  <h2>Analyses automatiques — Brouillons à valider</h2>
-  <p class="muted">Vérifiez chaque analyse avant de la publier.</p>
-  <button type="button" id="refreshDrafts">Actualiser les brouillons</button>
-  <div id="drafts">
-    <p class="muted">Aucun brouillon chargé.</p>
-  </div>
-</article>
- <article class="panel"><h2>Publier une analyse</h2><form id="newAnalysis"><label>Titre<input name="title" required></label><label>Date de course<input name="race_date" type="date"></label><label>Catégorie<select name="category"><option>Quinté</option><option>Quarté</option><option>Tiercé</option><option>Couplé</option><option>Analyse générale</option></select></label><label>Contenu<textarea name="content" rows="6" required></textarea></label><button>Publier</button></form><h3>Clients</h3><div id="customers"></div></article>
-</section>
-</main><footer>WANG TURF · Analyses informatives uniquement · Joue
+ 
