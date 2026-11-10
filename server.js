@@ -60,7 +60,17 @@ async function initDb() {
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   reviewed_at TIMESTAMPTZ
-);
+);    CREATE TABLE IF NOT EXISTS horse_racing_races (
+      meeting_id TEXT NOT NULL,
+      race_id TEXT NOT NULL,
+      country TEXT,
+      course TEXT,
+      race_date DATE,
+      race_name TEXT,
+      raw_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (meeting_id, race_id)
+    );
   `);
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
