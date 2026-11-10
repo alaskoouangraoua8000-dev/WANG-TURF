@@ -50,7 +50,17 @@ async function initDb() {
       id SERIAL PRIMARY KEY, title TEXT NOT NULL, race_date DATE,
       category TEXT NOT NULL, content TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
+    );CREATE TABLE IF NOT EXISTS analysis_drafts (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  race_date DATE,
+  category TEXT NOT NULL,
+  content TEXT NOT NULL,
+  source TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ
+);
   `);
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
