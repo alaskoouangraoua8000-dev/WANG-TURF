@@ -13,6 +13,51 @@ async function loadAnalyses(){try{const d=await api("/api/analyses");$("#analyse
 async function loadAdmin(){const d=await api("/api/admin/overview");$("#stats").innerHTML=`<span>Clients : <b>${d.stats.customers}</b></span><span>Abonnements actifs : <b>${d.stats.active}</b></span><span>Demandes approuvées : <b>${d.stats.revenue.toLocaleString("fr-FR")} F</b></span>`;
 $("#adminPayments").innerHTML=d.payments.map(p=>`<div class="item"><b>${esc(p.name)}</b> (${esc(p.email)}) — ${esc(p.plan)} / ${p.amount} F<br>${esc(p.method)} · Réf. ${esc(p.reference)} · <b>${esc(p.status)}</b><br>${p.status==="pending"?`<button data-approve="${p.id}">Valider et activer</button><button class="ghost" data-reject="${p.id}">Refuser</button>`:""}</div>`).join("")||"<p>Aucune demande.</p>";
 $("#customers").innerHTML=d.users.map(u=>`<div class="item">${esc(u.name)} — ${esc(u.email)}<br><small>Fin d'abonnement : ${u.subscription_until?new Date(u.subscription_until).toLocaleString("fr-FR"):"Aucun"}</small></div>`).join("")}
+async function loadDrafts(){
+  try {
+    const d = await api("/api/admin/drafts");
+
+    $("#drafts").innerHTML = d.drafts.map(x => `
+      <div class="item">
+        <h3>${esc(x.title)}</h3>
+        <span class="tag">${esc(x.category)} ${x.race_date ? "· "+esc(x.race_date) : ""}</span>
+        <p>${esc(x.content).replace(/\n/g,"<br>")}</p>
+        <small>Source : ${esc(x.source || "Non précisée")}</small><br>
+        <button data-draft-approve="${x.id}">Approuver et publier</button>
+        <button class="ghost" data-draft-reject="${x.id}">Rejeter</button>
+      </div>
+    `).join("") || "<p class='muted'>Aucun brouillon en attente.</p>";
+
+  } catch(e) {
+    $("#drafts").innerHTML = `<p>${esc(e.message)}</p>`;
+  }
+}
+
+$("#drafts").onclick = async e => {
+  const approve = e.target.dataset.draftApprove;
+  const reject = e.target.dataset.draftReject;
+
+  if (!approve && !reject) return;
+
+  try {
+    const id = approve || reject;
+    const action = approve ? "approve" : "reject";
+
+    const d = await api(`/api/admin/drafts/${id}/${action}`, {
+      method:"POST"
+    });
+
+    notice(d.message);
+    await loadDrafts();
+
+    if (approve) await loadAnalyses();
+
+  } catch(e) {
+    notice(e.message);
+  }
+};
+
+$("#refreshDrafts").onclick = loadDrafts;
 $("#adminPayments").onclick=async e=>{const a=e.target.dataset.approve,r=e.target.dataset.reject;if(!a&&!r)return;try{const d=await api(`/api/admin/payments/${a||r}/${a?"approve":"reject"}`,{method:"POST"});notice(d.message);await loadAdmin()}catch(x){notice(x.message)}};
 $("#newAnalysis").onsubmit=async e=>{e.preventDefault();try{await api("/api/admin/analyses",{method:"POST",body:JSON.stringify(data(e.target))});notice("Analyse publiée.");e.target.reset();await loadAdmin()}catch(x){notice(x.message)}};
 async function refresh(){try{const d=await api("/api/me");show("#auth",false);show("#member",true);show("#logout",true);$("#profile").innerHTML=`<b>${esc(d.user.name)}</b><br>${esc(d.user.email)}<br>Rôle : ${esc(d.user.role)}<br>Abonnement : ${d.user.subscription_until?new Date(d.user.subscription_until).toLocaleString("fr-FR"):"Inactif"}`;await loadMine();await loadAnalyses();if(d.user.role==="admin"){show("#admin",true);await loadAdmin()}else show("#admin",false)}catch{show("#auth",true);show("#member",false);show("#admin",false);show("#logout",false)}}
