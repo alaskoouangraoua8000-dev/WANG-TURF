@@ -32,7 +32,7 @@ app.use(express.json({ limit: "200kb" }));
 app.use(express.urlencoded({ extended: false, limit: "200kb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
+
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -279,8 +279,7 @@ app.get("/api/admin/horse-racing/coverage", auth("admin"), async (req,res) => {
   }
 });
 
-initDb().then(()=>app.listen(PORT,()=>console.log(`WANG TURF démarré sur le port ${PORT}`)))
-  .catch(e=>{console.error("Échec initialisation:",e);process.exit(1);});
+
 // TEST IMPORTATION DES RESULTATS DE LA VEILLE
 app.get("/api/admin/horse-racing/yesterday", auth("admin"), async (req, res) => {
   try {
@@ -325,3 +324,15 @@ app.get("/api/admin/horse-racing/yesterday", auth("admin"), async (req, res) => 
     });
   }
 });
+// PAGE PRINCIPALE
+app.get("*",(req,res)=>{
+  res.sendFile(path.join(__dirname,"public","index.html"));
+});
+
+// DÉMARRAGE DU SERVEUR
+initDb()
+  .then(()=>app.listen(PORT,()=>console.log(`WANG TURF démarré sur le port ${PORT}`)))
+  .catch(e=>{
+    console.error("Échec initialisation:",e);
+    process.exit(1);
+  });
