@@ -136,10 +136,10 @@ app.get("/api/admin/overview",auth("admin"),async(req,res)=>{
   const [users,payments,stats]=await Promise.all([
     pool.query("SELECT id,name,email,subscription_until,created_at FROM users WHERE role='customer' ORDER BY id DESC"),
     pool.query(`SELECT p.*,u.name,u.email FROM payment_requests p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC`),
-    pool.query(`SELECT COUNT(*)::int AS customers,
-      COUNT(*) FILTER(WHERE subscription_until>NOW())::int AS active,
-      COALESCE(SUM(amount) FILTER(WHERE status='approved'),0)::int AS revenue
-      FROM payment_requests`)
+   pool.query(`SELECT
+  (SELECT COUNT(*)::int FROM users WHERE role='customer') AS customers,
+  (SELECT COUNT(*)::int FROM users WHERE role='customer' AND subscription_until>NOW()) AS active,
+  (SELECT COALESCE(SUM(amount),0)::int FROM payment_requests WHERE status='approved') AS revenue`)
   ]);
   res.json({users:users.rows,payments:payments.rows,stats:stats.rows[0]});
 });
