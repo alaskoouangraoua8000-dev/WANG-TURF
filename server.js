@@ -141,7 +141,17 @@ app.get("/api/analyses",auth(),activeSubscriber,async(req,res)=>{
   const r=await pool.query("SELECT id,title,race_date,category,content,created_at FROM analyses ORDER BY race_date DESC NULLS LAST,id DESC");
   res.json({analyses:r.rows});
 });
-
+app.get("/api/admin/drafts",auth("admin"),async(req,res)=>{
+  try {
+    const r = await pool.query(
+      "SELECT * FROM analysis_drafts WHERE status='pending' ORDER BY created_at DESC"
+    );
+    res.json({drafts:r.rows});
+  } catch(e) {
+    console.error("Erreur chargement brouillons:",e);
+    res.status(500).json({error:"Impossible de charger les brouillons."});
+  }
+});
 app.get("/api/admin/overview",auth("admin"),async(req,res)=>{
   const [users,payments,stats]=await Promise.all([
     pool.query("SELECT id,name,email,subscription_until,created_at FROM users WHERE role='customer' ORDER BY id DESC"),
