@@ -236,7 +236,48 @@ app.post("/api/admin/analyses",auth("admin"),async(req,res)=>{
 app.delete("/api/admin/analyses/:id",auth("admin"),async(req,res)=>{
   await pool.query("DELETE FROM analyses WHERE id=$1",[req.params.id]);res.json({message:"Analyse supprimée."});
 });
+// TEST DE CONNEXION API HIPPIQUE
+app.get("/api/admin/horse-racing/coverage", auth("admin"), async (req,res) => {
+  try {
+    const key = process.env.HORSE_RACING_API_KEY;
 
+    if (!key) {
+      return res.status(500).json({
+        error: "Clé API absente dans Render."
+      });
+    }
+
+    const response = await fetch(
+      "https://api.apihorseracing.com/v1/meta/coverage",
+      {
+        headers: {
+          "X-API-Key": key
+        },
+        signal: AbortSignal.timeout(15000)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: result.error?.message || "Erreur API hippique."
+      });
+    }
+
+    res.json({
+      message: "Connexion API réussie.",
+      coverage: result.data,
+      meta: result.meta
+    });
+
+  } catch (error) {
+    console.error("Erreur API hippique:", error);
+    res.status(500).json({
+      error: "Impossible de contacter l'API hippique."
+    });
+  }
+});
 app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 initDb().then(()=>app.listen(PORT,()=>console.log(`WANG TURF démarré sur le port ${PORT}`)))
   .catch(e=>{console.error("Échec initialisation:",e);process.exit(1);});
