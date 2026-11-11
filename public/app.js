@@ -124,60 +124,7 @@ async function refresh(){
     show("#logout",false);
   }
 }
-async function refresh(){
-  let d;
 
-  // Vérifier uniquement la connexion
-  try {
-    d = await api("/api/me");
-  } catch(e) {
-    show("#auth",true);
-    show("#member",false);
-    show("#admin",false);
-    show("#logout",false);
-    notice("Connexion : " + e.message);
-    return;
-  }
-
-  // Afficher l'espace membre
-  show("#auth",false);
-  show("#member",true);
-  show("#logout",true);
-
-  $("#profile").innerHTML = `
-    <b>${esc(d.user.name)}</b><br>
-    ${esc(d.user.email)}<br>
-    Rôle : ${esc(d.user.role)}<br>
-    Abonnement : ${
-      d.user.subscription_until
-        ? new Date(d.user.subscription_until).toLocaleString("fr-FR")
-        : "Inactif"
-    }
-  `;
-
-  // Charger les données sans déconnecter l'utilisateur
-  try {
-    await loadMine();
-  } catch(e) {
-    $("#myPayments").textContent = "Erreur : " + e.message;
-  }
-
-  await loadAnalyses();
-
-  // Afficher l'administration
-  if(d.user.role === "admin"){
-    show("#admin",true);
-
-    try {
-      await loadAdmin();
-      await loadDrafts();
-    } catch(e) {
-      notice("Erreur administration : " + e.message);
-    }
-  } else {
-    show("#admin",false);
-  }
-}
 
 refresh();
 
